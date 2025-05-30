@@ -1,91 +1,123 @@
-# Contact-GraspNet  
 
-- Adding docker implementation by [Jishnu P](https://jishnujayakumar.github.io/).
+# ✋ **Contact-GraspNet**
 
-## Installation
+📦 **Docker support added by [Jishnu P](https://jishnujayakumar.github.io/)**  
 
-This code has been tested with python 3.7, tensorflow 2.2, CUDA 11.3, Docker Compose version v2.24.5
+https://github.com/user-attachments/assets/ac772b72-594b-4938-b4aa-34e06d852207
 
-- Build the docker image (this only needs to do once and can take some time).
-  ```shell
-  ./build_docker_image.sh
-  ```
+---
 
-- To run the container
-  ```shell
-  ./start_docker.sh # in detached mode (default)
-  ./start_docker.sh -i # in interactive mode
-  ```
+## 🚀 **Installation**
 
-- To stop:
-  ```shell
-  ./stop_docker.sh
-  ```
+✅ This code has been tested with:
+- Python 3.7  
+- TensorFlow 2.5  
+- CUDA 11.3  
+- Docker Compose v2.24.5  
 
-- To enter the container:
-  ```shell
-  ./enter_docker.sh
-  ```
+---
 
+### 🛠 **Docker Setup**
 
-Create the conda env
+🔨 **Build the Docker image** (only needed once):
+```bash
+./build_docker_image.sh
 ```
+
+▶️ **Run the container**:
+```bash
+./start_docker.sh        # Default: detached mode
+./start_docker.sh -i     # Interactive mode
+```
+
+🛑 **Stop the container**:
+```bash
+./stop_docker.sh
+```
+
+💻 **Enter the container**:
+```bash
+./enter_docker.sh
+```
+
+---
+
+### 🐍 **Conda Environment**
+```bash
 conda env create -f jp_cgnet.yml
 ```
 
-Download data and ckpts
-```python
+---
+
+### 📥 **Download Data and Checkpoints**
+```bash
 python download_artifacts.py
 ```
 
-### Troubleshooting
+---
 
-- Recompile pointnet2 tf_ops:
-```shell
+### 🛠 **Troubleshooting**
+
+🔄 **Recompile PointNet2 TensorFlow Ops**:
+```bash
 sh compile_pointnet_tfops.sh
 ```
 
-### Hardware
-Inference done and tested on 1x Nvidia A5000 GPU 24GB VRAM
+---
 
+### ⚙️ **Hardware**
+Tested on:  
+- **1x NVIDIA A5000 GPU (24GB VRAM)**
 
-## Inference
+---
 
+## 🧠 **Inference**
 
-Contact-GraspNet can directly predict a 6-DoF grasp distribution from a raw scene point cloud. However, to obtain object-wise grasps, remove background grasps and to achieve denser proposals it is highly recommended to use (unknown) object segmentation [e.g. [1](https://github.com/chrisdxie/uois), [2](https://arxiv.org/abs/2103.06796)] as preprocessing and then use the resulting segmentation map to crop local regions and filter grasp contacts.
+Contact-GraspNet can **predict 6-DoF grasp distributions from raw point clouds**.  
+For best results:
+- Use an **object segmentation method** (e.g., [UOIS](https://github.com/chrisdxie/uois), [YCB-V](https://arxiv.org/abs/2103.06796)) to segment objects.  
+- Crop and filter grasp contacts based on segments.  
 
-Given a .npy/.npz file with a depth map (in meters), camera matrix K and (optionally) a 2D segmentation map, execute:
-
-```shell
+🔍 **Run with Depth Map (.npy/.npz)**:
+```bash
 python contact_graspnet/inference.py \
-       --np_path=test_data/*.npy \
-       --local_regions --filter_grasps
+--np_path=test_data/*.npy \
+--local_regions \
+--filter_grasps
 ```
+
+
 
 <p align="center">
   <img src="examples/7.png" width="640" title="UOIS + Contact-GraspNet"/>
 </p>
---> close the window to go to next scene
+(Click window to advance to next scene)
 
-Given a .npy/.npz file with just a 3D point cloud (in meters), execute [for example](examples/realsense_crop_sigma_001.png):
-```shell
-python contact_graspnet/inference.py --np_path=/path/to/your/pc.npy \
-                                     --forward_passes=5 \
-                                     --z_range=[0.2,1.1]
+🔍 **Run with Point Cloud (.npy/.npz)**:
+```bash
+python contact_graspnet/inference.py \
+--np_path=/path/to/your/pc.npy \
+--forward_passes=5 \
+--z_range=[0.2,1.1]
 ```
 
-`--np_path`: input .npz/.npy file(s) with 'depth', 'K' and optionally 'segmap', 'rgb' keys. For processing a Nx3 point cloud instead use 'xzy' and optionally 'xyz_color' as keys.  
-`--ckpt_dir`: relative path to checkpooint directory. By default `checkpoint/scene_test_2048_bs3_hor_sigma_001` is used. For very clean / noisy depth data consider `scene_2048_bs3_rad2_32` / `scene_test_2048_bs3_hor_sigma_0025` trained with no / strong noise.   
-`--local_regions`: Crop 3D local regions around object segments for inference. (only works with segmap)  
-`--filter_grasps`: Filter grasp contacts such that they only lie on the surface of object segments. (only works with segmap)  
-`--skip_border_objects` Ignore segments touching the depth map boundary.  
-`--forward_passes` number of (batched) forward passes. Increase to sample more potential grasp contacts.  
-`--z_range` [min, max] z values in meter used to crop the input point cloud, e.g. to avoid grasps in the foreground/background(as above).  
-`--arg_configs TEST.second_thres:0.19 TEST.first_thres:0.23` Overwrite config confidence thresholds for successful grasp contacts to get more/less grasp proposals 
+---
 
-## Citation
+### 📝 **Key Options**
+- `--np_path`: Input .npz/.npy with keys 'depth', 'K', optionally 'segmap', 'rgb'. For Nx3 point cloud use 'xyz', optionally 'xyz_color'.  
+- `--ckpt_dir`: Checkpoint directory (default: `checkpoint/scene_test_2048_bs3_hor_sigma_001`).  
+- `--local_regions`: Crop regions around object segments (requires `segmap`).  
+- `--filter_grasps`: Filter contacts to segment surfaces (requires `segmap`).  
+- `--skip_border_objects`: Ignore segments on map boundary.  
+- `--forward_passes`: Increase for more grasps.  
+- `--z_range`: [min, max] depth cropping (in meters).  
+- `--arg_configs`: Override thresholds (e.g., `TEST.second_thres:0.19 TEST.first_thres:0.23`).  
 
-```
+---
+
+## 📚 **Citation**
+
+```bibtex
 @article{sundermeyer2021contact,
   title={Contact-GraspNet: Efficient 6-DoF Grasp Generation in Cluttered Scenes},
   author={Sundermeyer, Martin and Mousavian, Arsalan and Triebel, Rudolph and Fox, Dieter},
@@ -93,3 +125,5 @@ python contact_graspnet/inference.py --np_path=/path/to/your/pc.npy \
   year={2021}
 }
 ```
+
+---
