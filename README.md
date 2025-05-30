@@ -1,133 +1,135 @@
-# Contact-GraspNet  
 
-### Contact-GraspNet: Efficient 6-DoF Grasp Generation in Cluttered Scenes   
-Martin Sundermeyer, Arsalan Mousavian, Rudolph Triebel, Dieter Fox  
-ICRA 2021    
+# ✋ **Contact-GraspNet**
 
-[paper](https://arxiv.org/abs/2103.14127), [project page](https://research.nvidia.com/publication/2021-03_Contact-GraspNet%3A--Efficient), [video](http://www.youtube.com/watch?v=qRLKYSLXElM)
+📦 **Docker support added by [Jishnu P](https://jishnujayakumar.github.io/)**  
 
-<p align="center">
-  <img src="examples/2.gif" width="640" title="UOIS + Contact-GraspNet"/>
-</p>
+https://github.com/user-attachments/assets/ac772b72-594b-4938-b4aa-34e06d852207
 
-## Installation
+---
 
-This code has been tested with python 3.7, tensorflow 2.2, CUDA 11.1
+## 🚀 **Installation**
 
-Create the conda env
+✅ This code has been tested with:
+- Python 3.7  
+- TensorFlow 2.5  
+- CUDA 11.3  
+- Docker Compose v2.24.5  
+
+---
+
+### 🛠 **Setup**
+```bash
+# Clone the repository (including submodules)
+git clone --recursive https://github.com/jishnujayakumar/contact_graspnet cgnet
+
+# Navigate to the docker directory
+cd cgnet/docker
 ```
-conda env create -f contact_graspnet_env.yml
+
+
+🔨 Build the Docker image (optional):
+- (This step may take some time—feel free to grab a coffee ☕ and some snacks 🍪)
+- 🔔 If you prefer, you can skip this step and move on to the next one.
+```bash
+./build_docker_image.sh
 ```
 
-### Troubleshooting
 
-- Recompile pointnet2 tf_ops:
-```shell
+
+▶️ **Run the container**:
+```bash
+./start_docker.sh        # Default: detached mode
+./start_docker.sh -i     # Interactive mode
+```
+
+🛑 **Stop the container**:
+```bash
+./stop_docker.sh
+```
+
+💻 **Enter the container**:
+```bash
+./enter_docker.sh
+```
+
+---
+
+### 🐍 **Conda Environment**
+```bash
+conda env create -f jp_cgnet.yml
+```
+
+---
+
+### 📥 **Download Data and Checkpoints**
+```bash
+python download_artifacts.py
+```
+
+---
+
+### 🛠 **Troubleshooting**
+
+🔄 **Recompile PointNet2 TensorFlow Ops**:
+```bash
 sh compile_pointnet_tfops.sh
 ```
 
-### Hardware
-Training: 1x Nvidia GPU >= 24GB VRAM, >=64GB RAM  
-Inference: 1x Nvidia GPU >= 8GB VRAM (might work with less)
+---
 
-## Download Models and Data
-### Model
-Download trained models from [here](https://drive.google.com/drive/folders/1tBHKf60K8DLM5arm-Chyf7jxkzOr5zGl?usp=sharing) and copy them into the `checkpoints/` folder.
-### Test data
-Download the test data from [here](https://drive.google.com/drive/folders/1TqpM2wHAAo0j3i1neu3Xeru3_WnsYQnx?usp=sharing) and copy them them into the `test_data/` folder.
+### ⚙️ **Hardware**
+Tested on:  
+- **1x NVIDIA A5000 GPU (24GB VRAM)**
 
-## Inference
+---
 
+## 🧠 **Inference**
 
-Contact-GraspNet can directly predict a 6-DoF grasp distribution from a raw scene point cloud. However, to obtain object-wise grasps, remove background grasps and to achieve denser proposals it is highly recommended to use (unknown) object segmentation [e.g. [1](https://github.com/chrisdxie/uois), [2](https://arxiv.org/abs/2103.06796)] as preprocessing and then use the resulting segmentation map to crop local regions and filter grasp contacts.
+Contact-GraspNet can **predict 6-DoF grasp distributions from raw point clouds**.  
+For best results:
+- Use an **object segmentation method** (e.g., [UOIS](https://github.com/chrisdxie/uois), [YCB-V](https://arxiv.org/abs/2103.06796)) to segment objects.  
+- Crop and filter grasp contacts based on segments.  
 
-Given a .npy/.npz file with a depth map (in meters), camera matrix K and (optionally) a 2D segmentation map, execute:
-
-```shell
+🔍 **Run with Depth Map (.npy/.npz)**:
+```bash
 python contact_graspnet/inference.py \
-       --np_path=test_data/*.npy \
-       --local_regions --filter_grasps
+--np_path=test_data/*.npy \
+--local_regions \
+--filter_grasps
 ```
+
+
 
 <p align="center">
   <img src="examples/7.png" width="640" title="UOIS + Contact-GraspNet"/>
 </p>
---> close the window to go to next scene
+(Click window to advance to next scene)
 
-Given a .npy/.npz file with just a 3D point cloud (in meters), execute [for example](examples/realsense_crop_sigma_001.png):
-```shell
-python contact_graspnet/inference.py --np_path=/path/to/your/pc.npy \
-                                     --forward_passes=5 \
-                                     --z_range=[0.2,1.1]
+🔍 **Run with Point Cloud (.npy/.npz)**:
+```bash
+python contact_graspnet/inference.py \
+--np_path=/path/to/your/pc.npy \
+--forward_passes=5 \
+--z_range=[0.2,1.1]
 ```
 
-`--np_path`: input .npz/.npy file(s) with 'depth', 'K' and optionally 'segmap', 'rgb' keys. For processing a Nx3 point cloud instead use 'xzy' and optionally 'xyz_color' as keys.  
-`--ckpt_dir`: relative path to checkpooint directory. By default `checkpoint/scene_test_2048_bs3_hor_sigma_001` is used. For very clean / noisy depth data consider `scene_2048_bs3_rad2_32` / `scene_test_2048_bs3_hor_sigma_0025` trained with no / strong noise.   
-`--local_regions`: Crop 3D local regions around object segments for inference. (only works with segmap)  
-`--filter_grasps`: Filter grasp contacts such that they only lie on the surface of object segments. (only works with segmap)  
-`--skip_border_objects` Ignore segments touching the depth map boundary.  
-`--forward_passes` number of (batched) forward passes. Increase to sample more potential grasp contacts.  
-`--z_range` [min, max] z values in meter used to crop the input point cloud, e.g. to avoid grasps in the foreground/background(as above).  
-`--arg_configs TEST.second_thres:0.19 TEST.first_thres:0.23` Overwrite config confidence thresholds for successful grasp contacts to get more/less grasp proposals 
+---
 
+### 📝 **Key Options**
+- `--np_path`: Input .npz/.npy with keys 'depth', 'K', optionally 'segmap', 'rgb'. For Nx3 point cloud use 'xyz', optionally 'xyz_color'.  
+- `--ckpt_dir`: Checkpoint directory (default: `checkpoint/scene_test_2048_bs3_hor_sigma_001`).  
+- `--local_regions`: Crop regions around object segments (requires `segmap`).  
+- `--filter_grasps`: Filter contacts to segment surfaces (requires `segmap`).  
+- `--skip_border_objects`: Ignore segments on map boundary.  
+- `--forward_passes`: Increase for more grasps.  
+- `--z_range`: [min, max] depth cropping (in meters).  
+- `--arg_configs`: Override thresholds (e.g., `TEST.second_thres:0.19 TEST.first_thres:0.23`).  
 
-## Training
+---
 
-### Download Data 
+## 📚 **Citation**
 
-Download the Acronym dataset, ShapeNet meshes and make them watertight, following these [steps](https://github.com/NVlabs/acronym#using-the-full-acronym-dataset).
-
-Download the training data consisting of 10000 table top training scenes with contact grasp information from [here](https://drive.google.com/drive/folders/1eeEXAISPaStZyjMX8BHR08cdQY4HF4s0?usp=sharing) and extract it to the same folder:
-
-```
-acronym
-├── grasps
-├── meshes
-├── scene_contacts
-└── splits
-```
-
-### Train Contact-GraspNet
-
-When training on a headless server set the environment variable
-```shell
-export PYOPENGL_PLATFORM='egl'
-```
-
-Start training with config `contact_graspnet/config.yaml`
-```
-python contact_graspnet/train.py --ckpt_dir checkpoints/your_model_name \
-                                 --data_path /path/to/acronym/data
-```
-
-### Generate Contact Grasps and Scenes yourself (optional)
-
-The `scene_contacts` downloaded above are generated from the Acronym dataset. To generate/visualize table-top scenes yourself, also pip install the [acronym_tools]((https://github.com/NVlabs/acronym)) package in your conda environment as described in the acronym repository.
-
-In the first step, object-wise 6-DoF grasps are mapped to their contact points saved in `mesh_contacts`
-
-```
-python tools/create_contact_infos.py /path/to/acronym
-```
-
-From the generated `mesh_contacts` you can create table-top scenes which are saved in `scene_contacts` with
-
-```
-python tools/create_table_top_scenes.py /path/to/acronym
-```
-
-Takes ~3 days in a single thread. Run the command several times to process on multiple cores in parallel.
-
-You can also visualize existing table-top scenes and grasps
-
-```
-python tools/create_table_top_scenes.py /path/to/acronym \
-       --load_existing scene_contacts/000000.npz -vis
-```
-
-## Citation
-
-```
+```bibtex
 @article{sundermeyer2021contact,
   title={Contact-GraspNet: Efficient 6-DoF Grasp Generation in Cluttered Scenes},
   author={Sundermeyer, Martin and Mousavian, Arsalan and Triebel, Rudolph and Fox, Dieter},
@@ -135,3 +137,5 @@ python tools/create_table_top_scenes.py /path/to/acronym \
   year={2021}
 }
 ```
+
+---
