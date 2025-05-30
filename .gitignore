@@ -4,3 +4,10 @@ checkpoints/*
 **/*.pyc
 **/__pycache__
 .vscode
+
+*.so
+*.o
+*.pub
+*.pkl
+
+test_data/

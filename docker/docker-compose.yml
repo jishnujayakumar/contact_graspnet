@@ -1,0 +1,32 @@
+#----------------------------------------------------------------------------------------------------
+# Work done while being at the Intelligent Robotics and Vision Lab at the University of Texas, Dallas
+# Please check the licenses of the respective works utilized here before using this script.
+# 🖋️ Jishnu Jaykumar Padalunkal (2025).
+#----------------------------------------------------------------------------------------------------
+
+# Tested on Docker Compose version v2.24.5
+
+version: '3'
+services:
+  jp_cgnet:
+    image: irvlutd/jp_cgnet:latest
+    container_name: jp_cgnet
+    runtime: nvidia  # Add this line to specify NVIDIA runtime
+    network_mode: host
+    ipc: host
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    environment:
+      - NVIDIA_DISABLE_REQUIRE=1
+      - DISPLAY=${DISPLAY}
+      - GIT_INDEX_FILE
+      - NVIDIA_VISIBLE_DEVICES=all  # Enables all GPUs
+    stdin_open: true
+    tty: true
+    volumes:
+      - /home:/home
+      - /tmp:/tmp
+      - /mnt:/mnt
+      - ${PWD}/..:${PWD}/..
