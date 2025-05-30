@@ -17,12 +17,24 @@ https://github.com/user-attachments/assets/ac772b72-594b-4938-b4aa-34e06d852207
 
 ---
 
-### 🛠 **Docker Setup**
+### 🛠 **Setup**
+```bash
+# Clone the repository (including submodules)
+git clone --recursive https://github.com/jishnujayakumar/contact_graspnet cgnet
 
-🔨 **Build the Docker image** (only needed once):
+# Navigate to the docker directory
+cd cgnet/docker
+```
+
+
+🔨 Build the Docker image (optional):
+- (This step may take some time—feel free to grab a coffee ☕ and some snacks 🍪)
+- 🔔 If you prefer, you can skip this step and move on to the next one.
 ```bash
 ./build_docker_image.sh
 ```
+
+
 
 ▶️ **Run the container**:
 ```bash
