@@ -63,8 +63,13 @@ conda env create -f jp_cgnet.yml
 
 ### 📥 **Download Data and Checkpoints**
 ```bash
-python download_artifacts.py
+python download_assets.py
 ```
+If you encounter this error:
+```
+ImportError: cannot import name 'Self' from 'typing_extensions' (/opt/conda/envs/jp_cgnet/lib/python3.7/site-packages/typing_extensions.py)
+```
+A quick fix is: `pip install gdown`
 
 ---
 
